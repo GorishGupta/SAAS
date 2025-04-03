@@ -4,8 +4,11 @@ export {};
 declare global {
   namespace NodeJS {
     interface ProcessEnv {
-      // openai api key
+      // gemini api key
       GEMINI_API_KEY: string;
+
+      // google api key (alias for GEMINI_API_KEY for compatibility)
+      GOOGLE_API_KEY?: string;
 
       // replicate api token
       REPLICATE_API_TOKEN: string;
@@ -22,6 +25,9 @@ declare global {
 
       // crisp website id
       NEXT_PUBLIC_CRISP_WEBSITE_ID: string;
+
+      // tempo environment variable
+      NEXT_PUBLIC_TEMPO?: string;
     }
   }
 }

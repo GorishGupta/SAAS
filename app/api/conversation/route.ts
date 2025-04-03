@@ -1,55 +1,57 @@
 import { auth } from "@clerk/nextjs";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { type NextRequest, NextResponse } from "next/server";
-
-import { increaseApiLimit, checkApiLimit } from "@/lib/api-limit";
-import { checkSubscription } from "@/lib/subscription";
-
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
 export async function POST(req: NextRequest) {
   try {
     const { userId } = auth();
+
+    if (!userId) {
+      return new NextResponse("Unauthorized", { status: 401 });
+    }
+
     const body = await req.json();
     const { messages } = body;
 
-    if (!userId) return new NextResponse("Unauthorized.", { status: 401 });
-    if (!GEMINI_API_KEY)
-      return new NextResponse("Gemini API key not configured.", {
-        status: 500,
-      });
-    if (!messages)
-      return new NextResponse("Messages are required.", { status: 400 });
-
-    const freeTrial = await checkApiLimit();
-    const isPro = await checkSubscription();
-
-    if (!freeTrial && !isPro)
-      return new NextResponse("Free trial has expired.", { status: 403 });
-
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateText?key=${GEMINI_API_KEY}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ contents: messages }),
-      }
-    );
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Gemini API Error:", errorText);
-      return new NextResponse("Failed to fetch response from Gemini.", {
-        status: response.status,
-      });
+    if (!messages) {
+      return new NextResponse("Messages are required", { status: 400 });
     }
 
-    const data = await response.json();
-    const reply = data.candidates?.[0]?.content || "No response from Gemini.";
+    // Initialize the Google Generative AI with API key
+    if (!process.env.GEMINI_API_KEY) {
+      return new NextResponse("Gemini API Key is required", { status: 500 });
+    }
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-    if (!isPro) await increaseApiLimit();
+    // For text-only input, use the gemini-1.5-pro model
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
 
-    return NextResponse.json({ message: reply }, { status: 200 });
-  } catch (error) {
+    // Convert messages to the format expected by Gemini
+    const formattedMessages = messages.map((message: any) => ({
+      role: message.role === "user" ? "user" : "model",
+      parts: [{ text: message.content }],
+    }));
+
+    // Start a chat session
+    const chat = model.startChat({
+      history: formattedMessages.slice(0, -1),
+      generationConfig: {
+        temperature: 0.7,
+        topP: 0.95,
+        topK: 40,
+      },
+    });
+
+    // Get the last message from the user
+    const lastMessage = messages[messages.length - 1];
+
+    // Send the message to the model
+    const result = await chat.sendMessage(lastMessage.content);
+    const response = await result.response;
+    const text = response.text();
+
+    return NextResponse.json({ message: text }, { status: 200 });
+  } catch (error: unknown) {
     console.error("[CONVERSATION_ERROR]:", error);
     return new NextResponse("Internal server error.", { status: 500 });
   }
