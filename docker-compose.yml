@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    restart: unless-stopped
+    # Uncomment the following lines if you need a database
+    # depends_on:
+    #   - db
+
+  # Uncomment if you want to run a local database
+  # db:
+  #   image: mysql:8.0
+  #   environment:
+  #     MYSQL_ROOT_PASSWORD: password
+  #     MYSQL_DATABASE: genius-ai
+  #     MYSQL_USER: user
+  #     MYSQL_PASSWORD: password
+  #   ports:
+  #     - "3306:3306"
+  #   volumes:
+  #     - db_data:/var/lib/mysql
+
+# Uncomment if using the database service
+# volumes:
+#   db_data:
