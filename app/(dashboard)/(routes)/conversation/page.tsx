@@ -6,6 +6,7 @@ import { MessageSquare } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import ReactMarkdown from "react-markdown";
 import { toast } from "sonner";
 import * as z from "zod";
 
@@ -24,7 +25,9 @@ import { conversationFormSchema } from "@/schemas";
 const ConversationPage = () => {
   const proModal = useProModal();
   const router = useRouter();
-  const [messages, setMessages] = useState<{ role: string; content: string }[]>([]);
+  const [messages, setMessages] = useState<{ role: string; content: string }[]>(
+    [],
+  );
 
   const form = useForm<z.infer<typeof conversationFormSchema>>({
     resolver: zodResolver(conversationFormSchema),
@@ -130,11 +133,39 @@ const ConversationPage = () => {
                   "p-8 w-full flex items-start gap-x-8 rounded-lg",
                   message.role === "user"
                     ? "bg-white border border-black/10"
-                    : "bg-muted"
+                    : "bg-muted",
                 )}
               >
                 {message.role === "user" ? <UserAvatar /> : <BotAvatar />}
-                <p className="text-sm">{message.content}</p>
+                <div className="text-sm prose prose-sm max-w-none">
+                  <ReactMarkdown
+                    components={{
+                      h1: ({ node, ...props }) => (
+                        <h1 className="text-xl font-bold my-2" {...props} />
+                      ),
+                      h2: ({ node, ...props }) => (
+                        <h2 className="text-lg font-bold my-2" {...props} />
+                      ),
+                      h3: ({ node, ...props }) => (
+                        <h3 className="text-md font-bold my-1" {...props} />
+                      ),
+                      ul: ({ node, ...props }) => (
+                        <ul className="list-disc pl-4 my-2" {...props} />
+                      ),
+                      ol: ({ node, ...props }) => (
+                        <ol className="list-decimal pl-4 my-2" {...props} />
+                      ),
+                      li: ({ node, ...props }) => (
+                        <li className="my-1" {...props} />
+                      ),
+                      p: ({ node, ...props }) => (
+                        <p className="my-2" {...props} />
+                      ),
+                    }}
+                  >
+                    {message.content}
+                  </ReactMarkdown>
+                </div>
               </div>
             ))}
           </div>

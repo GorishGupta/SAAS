@@ -45,14 +45,75 @@ export async function POST(req: NextRequest) {
     // Get the last message from the user
     const lastMessage = messages[messages.length - 1];
 
+    // Format the prompt to encourage interactive responses
+    const enhancedPrompt = `Please respond to this in an interactive, conversational way with clear sections and bullet points where appropriate: ${lastMessage.content}`;
+
     // Send the message to the model
-    const result = await chat.sendMessage(lastMessage.content);
+    const result = await chat.sendMessage(enhancedPrompt);
     const response = await result.response;
     const text = response.text();
 
-    return NextResponse.json({ message: text }, { status: 200 });
+    // Process the response to ensure it's formatted in an interactive way
+    const formattedResponse = formatResponseForInteractivity(text);
+
+    return NextResponse.json({ message: formattedResponse }, { status: 200 });
   } catch (error: unknown) {
     console.error("[CONVERSATION_ERROR]:", error);
     return new NextResponse("Internal server error.", { status: 500 });
   }
+}
+
+// Helper function to format the response for better interactivity
+function formatResponseForInteractivity(text: string): string {
+  // If the response already has formatting elements, return as is
+  if (text.includes("- ") || text.includes("* ") || text.includes("#")) {
+    return text;
+  }
+
+  // Split the text into paragraphs
+  const paragraphs = text.split("\n\n").filter((p) => p.trim().length > 0);
+
+  // If there's only one paragraph, return as is
+  if (paragraphs.length <= 1) {
+    return text;
+  }
+
+  // Format the response with headings and bullet points where appropriate
+  let formattedText = "";
+
+  paragraphs.forEach((paragraph, index) => {
+    // First paragraph is often an introduction
+    if (index === 0) {
+      formattedText += paragraph + "\n\n";
+      return;
+    }
+
+    // Short paragraphs (likely conclusions or transitions)
+    if (paragraph.length < 100) {
+      formattedText += paragraph + "\n\n";
+      return;
+    }
+
+    // For longer paragraphs, try to break them into bullet points
+    const sentences = paragraph.split(/\.\s+/);
+
+    if (sentences.length >= 3) {
+      // Add a heading based on the first sentence
+      formattedText += `## ${sentences[0].trim()}\n\n`;
+
+      // Convert remaining sentences to bullet points
+      sentences.slice(1).forEach((sentence) => {
+        if (sentence.trim().length > 0) {
+          formattedText += `- ${sentence.trim()}.\n`;
+        }
+      });
+
+      formattedText += "\n";
+    } else {
+      // Keep short paragraphs as is
+      formattedText += paragraph + "\n\n";
+    }
+  });
+
+  return formattedText.trim();
 }

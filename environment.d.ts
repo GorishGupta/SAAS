@@ -13,6 +13,9 @@ declare global {
       // replicate api token
       REPLICATE_API_TOKEN: string;
 
+      // stability api key
+      STABILITY_API_KEY: string;
+
       // aiven database url
       DATABASE_URL: string;
 

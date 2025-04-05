@@ -36,9 +36,15 @@ const amountOptions = [
 ];
 
 const resolutionOptions = [
-  { value: "256x256", label: "256x256" },
-  { value: "512x512", label: "512x512" },
   { value: "1024x1024", label: "1024x1024" },
+  { value: "1152x896", label: "1152x896" },
+  { value: "1216x832", label: "1216x832" },
+  { value: "1344x768", label: "1344x768" },
+  { value: "1536x640", label: "1536x640" },
+  { value: "640x1536", label: "640x1536" },
+  { value: "768x1344", label: "768x1344" },
+  { value: "832x1216", label: "832x1216" },
+  { value: "896x1152", label: "896x1152" },
 ];
 
 const ImagePage = () => {
@@ -48,7 +54,7 @@ const ImagePage = () => {
 
   const form = useForm<z.infer<typeof imageFormSchema>>({
     resolver: zodResolver(imageFormSchema),
-    defaultValues: { prompt: "", amount: "1", resolution: "512x512" },
+    defaultValues: { prompt: "", amount: "1", resolution: "1024x1024" },
   });
 
   const isLoading = form.formState.isSubmitting;
@@ -188,9 +194,15 @@ const ImagePage = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mt-8">
             {images.map((src, i) => (
-              <Card key={src} className="rounded-lg overflow-hidden">
+              <Card key={`${src}-${i}`} className="rounded-lg overflow-hidden">
                 <div className="relative aspect-square">
-                  <Image src={src} alt={`Generated image ${i + 1}`} fill />
+                  <Image
+                    src={src}
+                    alt={`Generated image ${i + 1}`}
+                    fill
+                    className="object-cover"
+                    unoptimized
+                  />
                 </div>
 
                 <CardFooter className="p-2">
